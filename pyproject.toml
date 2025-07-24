@@ -12,7 +12,7 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/*"]
+packages = ["src/pydual"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -21,6 +21,7 @@ platforms = ["osx-arm64"]
 [tool.pixi.pypi-dependencies]
 pydual = { path = ".", editable = true }
 numtype = { git = "https://github.com/numpy/numtype.git" }
+build = "*"
 
 [tool.pixi.tasks]
 
