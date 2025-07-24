@@ -1,0 +1,30 @@
+[project]
+authors = [{name = "rberga06", email = "78449715+RBerga06@users.noreply.github.com"}]
+dependencies = [
+    "numpy>=2.3.1,<3"
+]
+name = "pydual"
+requires-python = ">= 3.13"
+version = "0.1.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/*"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+pydual = { path = ".", editable = true }
+numtype = { git = "https://github.com/numpy/numtype.git" }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+
+[tool.pyright]
+pythonVersion = "3.13"
