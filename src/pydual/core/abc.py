@@ -47,7 +47,7 @@ class FixedDualPart[S: tuple[int, ...], N: int](DualParts[FixedDualBasis[N], S, 
 
 
 class DynDualBasis(DualBasis):
-    """A dynamically-sized dual basis. It is both ortogonal and ortonormal"""
+    """A dynamically-sized dual basis (all variables are independent here)."""
 
     @override
     def cov[S: tuple[int, ...]](self, lhs: DualParts[Self, S], rhs: DualParts[Self, S], /) -> Tensor[S]:
