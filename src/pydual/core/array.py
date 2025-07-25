@@ -6,8 +6,8 @@ from dataclasses import dataclass
 import numpy as np
 
 type dTensor[B, S: Shape] = dual[B, S]
-type dMat[B, N: int = int, M: int = N] = dTensor[B, tuple[N, M]]
-type dVec[B, N: int = int] = dTensor[B, tuple[N]]
+type dMat[B, N: int, M: int = N] = dTensor[B, tuple[N, M]]
+type dVec[B, N: int] = dTensor[B, tuple[N]]
 type dScalar[B] = dTensor[B, tuple[()]]
 
 
@@ -246,11 +246,11 @@ class dual[B, S: Shape]:
     @overload  # element access (any shape)
     def __getitem__[Z: tuple[int, ...]](self: dTensor[B, Z], key: Z, /) -> dScalar[B]: ...
     @overload  # slicing (vector)
-    def __getitem__(self: dVec[B], key: "slice[int | None, int | None, int | None]", /) -> dVec[B]: ...
+    def __getitem__(self: dVec[B, int], key: "slice[int | None, int | None, int | None]", /) -> dVec[B, int]: ...
     @overload  # mask (vector)
-    def __getitem__(self: dVec[B], key: Vec[int, np.bool_], /) -> dVec[B]: ...
+    def __getitem__(self: dVec[B, int], key: Vec[int, np.bool_], /) -> dVec[B, int]: ...
     @overload  # mask (matrix)
-    def __getitem__(self: dMat[B], key: Mat[int, int, np.bool_], /) -> dMat[B]: ...
+    def __getitem__(self: dMat[B, int], key: Mat[int, int, np.bool_], /) -> dMat[B, int]: ...
     def __getitem__(self, key: Any) -> float | dTensor[B, tuple[int, ...]]:  # pyright: ignore[reportExplicitAny, reportAny]
         return dual[B, tuple[int, ...]](self.dreal[key], self.ddual.map(lambda x: x[key]))  # pyright: ignore[reportArgumentType]
 
@@ -263,8 +263,8 @@ class dual[B, S: Shape]:
     @overload
     def as_tuple(self: dVec[B, Literal[3]], /) -> tuple[dScalar[B], dScalar[B], dScalar[B]]: ...
     @overload
-    def as_tuple(self: dVec[B], /) -> tuple[dScalar[B], ...]: ...
-    def as_tuple(self: dVec[B], /) -> tuple[dScalar[B], ...]:  # pyright: ignore[reportInconsistentOverload]
+    def as_tuple(self: dVec[B, int], /) -> tuple[dScalar[B], ...]: ...
+    def as_tuple(self: dVec[B, int], /) -> tuple[dScalar[B], ...]:  # pyright: ignore[reportInconsistentOverload]
         return tuple(self)
 
     def sum[N: int](
