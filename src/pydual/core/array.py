@@ -1,7 +1,7 @@
 """NumPy arrays of dual numbers."""
 from collections.abc import Iterator
 from typing import Any, Literal, Self, cast, final, overload
-from .abc import DualBasis, DualParts, DynDualBasis, Mat, Vec, Shape, Tensor
+from .abc import DualBasis, DualParts, DynDualBasis, FixedDualBasis, Mat, Vec, Shape, Tensor
 from dataclasses import dataclass
 import numpy as np
 
@@ -280,8 +280,29 @@ class dual[S: Shape, B: DualBasis]:
         else:
             return np.sum([x * w for x, w in zip(self, weights)]) / np.sum(weights)  # pyright: ignore[reportAny]
 
+    @staticmethod  # TODO: Can this be generalized to N-dimensional tensors somehow?
+    def from_data[N: int](data: Vec[N], /, *, sigma: Vec[N] | None = None, cov: Mat[N] | None = None) -> dVec[N, FixedDualBasis[N]]:
+        """
+        Convert `data` to a vector of dual numbers.
+
+        Arguments:
+        - data: the estimated/average values for N random variables
+        - sigma: factors that should multiply the standard deviations of those N random variables (defined by `cov`)
+        - cov: the covariance matrix between those N random variables (defaults to the identity)
+        """
+        n = cast(N, data.shape[-1])
+        if cov is None:
+            cov = cast(Mat[N], np.eye(n))
+        basis = FixedDualBasis(cov)
+        return dual(data, basis.eye(sigma))
+
 
 def dreal_and_std[S: Shape, B: DualBasis](x: dTensor[S, B] | Tensor[S], /) -> tuple[Tensor[S], Tensor[S] | None]:
     if isinstance(x, dual):
         return x.dreal_and_std
     return (x, None)
+
+
+def cov[S: Shape](a: dTensor[S], b: dTensor[S]) -> Tensor[S]:
+    """Evaluate the covariance between `a` and `b` (element by element)."""
+    return a.ddual.cov(b.ddual)

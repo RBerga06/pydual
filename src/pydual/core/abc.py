@@ -1,7 +1,6 @@
 """Protocols."""
-from abc import ABC
 from dataclasses import dataclass
-from typing import Callable, Protocol, Self, override
+from typing import Callable, Protocol, Self, cast, override
 import numpy as np
 
 type Shape = tuple[int, ...]
@@ -10,8 +9,12 @@ type Vec[N: int, T: np.generic = np.float64] = Tensor[tuple[N], T]
 type Mat[N: int, M: int = N, T: np.generic = np.float64] = Tensor[tuple[N, M], T]
 
 
-class DualBasis(ABC):
+class DualBasis(Protocol):
     """A basis for a space of dual parts."""
+
+    def zero[S: Shape](self, shape: S, /) -> "DualParts[Self, S]":
+        """Return the zero with the given shape and `self` as a basis."""
+        raise NotImplementedError
 
 
 class DualParts[B: DualBasis, S: Shape](Protocol):
@@ -65,6 +68,22 @@ class FixedDualBasis[N: int](DualBasis):
             cov_matrix = np.eye(cov_matrix)
         object.__setattr__(self, "cov_matrix", cov_matrix)
 
+    @property
+    def n(self, /) -> N:
+        return self.cov_matrix.shape[0]  # pyright: ignore[reportReturnType]
+
+    @override
+    def zero[S: Shape](self, shape: S, /) -> "FixedDualPart[S, N]":
+        data = cast(Tensor[tuple[*S, N]], np.zeros((*shape, self.n), dtype=np.float64))
+        return FixedDualPart[S, N](data, self)
+
+    def eye(self, delta: Vec[N] | None = None, /) -> "FixedDualPart[tuple[N], N]":
+        if delta is None:
+            data = np.eye(self.n, dtype=np.float64)
+        else:
+            data = np.diag(delta)
+        return FixedDualPart[tuple[N], N](data, self)
+
 @dataclass(slots=True, frozen=True)
 class FixedDualPart[S: Shape, N: int](DualParts[FixedDualBasis[N], S]):
     """Dual parts (implemented as a fixed-size NumPy covariance matrix)."""
@@ -110,6 +129,10 @@ class FixedDualPart[S: Shape, N: int](DualParts[FixedDualBasis[N], S]):
 
 class DynDualBasis(DualBasis):
     """A dynamically-sized dual basis (all variables are independent here)."""
+
+    @override
+    def zero[S: Shape](self, shape: S, /) -> "DynDualPart[S]":
+        return DynDualPart({}, self)
 
 @dataclass(slots=True, frozen=True)
 class DynDualPart[S: Shape](DualParts[DynDualBasis, S]):
