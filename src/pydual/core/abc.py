@@ -1,4 +1,5 @@
 """Protocols."""
+from abc import ABC
 from dataclasses import dataclass
 from typing import Callable, Protocol, Self, override
 import numpy as np
@@ -9,7 +10,11 @@ type Vec[N: int, T: np.generic = np.float64] = Tensor[tuple[N], T]
 type Mat[N: int, M: int = N, T: np.generic = np.float64] = Tensor[tuple[N, M], T]
 
 
-class DualParts[B, S: Shape](Protocol):
+class DualBasis(ABC):
+    """A basis for a space of dual parts."""
+
+
+class DualParts[B: DualBasis, S: Shape](Protocol):
     """The dual parts of a dual number."""
     basis: B
 
@@ -51,7 +56,7 @@ class DualParts[B, S: Shape](Protocol):
 
 
 @dataclass(slots=True, frozen=True)
-class FixedDualBasis[N: int]:
+class FixedDualBasis[N: int](DualBasis):
     cov_matrix: Mat[N]
 
     def __init__(self, cov_matrix: Mat[N] | N, /) -> None:
@@ -103,7 +108,7 @@ class FixedDualPart[S: Shape, N: int](DualParts[FixedDualBasis[N], S]):
         raise TypeError("You cannot clone a `FixedDualPart`.")
 
 
-class DynDualBasis:
+class DynDualBasis(DualBasis):
     """A dynamically-sized dual basis (all variables are independent here)."""
 
 @dataclass(slots=True, frozen=True)

@@ -333,7 +333,7 @@ packages:
   - numpy >=2.3.1,<3
   - python
   input:
-    hash: a5e1f383feceb4f58bd9f977c13477b1eb3c8a03ee83a0a75f6c1a561f5a4316
+    hash: 38d2b53aeba936d69288861c59a8575260206ac52ceb755b1fa31efe4bb510c8
     globs: []
 - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
   name: pyproject-hooks
