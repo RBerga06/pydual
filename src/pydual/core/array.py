@@ -279,3 +279,9 @@ class dual[S: Shape, B: DualBasis]:
             return self.sum() / self.shape[0]
         else:
             return np.sum([x * w for x, w in zip(self, weights)]) / np.sum(weights)  # pyright: ignore[reportAny]
+
+
+def dreal_and_std[S: Shape, B: DualBasis](x: dTensor[S, B] | Tensor[S], /) -> tuple[Tensor[S], Tensor[S] | None]:
+    if isinstance(x, dual):
+        return x.dreal_and_std
+    return (x, None)
