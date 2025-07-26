@@ -29,6 +29,7 @@ backend = { name = "pixi-build-python", version = "0.1.*" }
 
 [package.host-dependencies]
 uv = "*"
+hatchling = "*"
 
 [package.run-dependencies]
 numpy = ">=2.3.1,<3"
