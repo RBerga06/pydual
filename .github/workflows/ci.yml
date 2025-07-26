@@ -49,6 +49,7 @@ jobs:
 
   conda:
     name: Build Conda package (`pixi`)
+    needs: pypi-integrity
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
