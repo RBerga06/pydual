@@ -41,5 +41,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: whl
-      - run: uv pip install *.whl
+      - run: |
+          uv venv
+          uv pip install *.whl
       - run: uv run python -c 'import pydual.core'
