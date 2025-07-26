@@ -45,7 +45,7 @@ jobs:
         run: |
           uv venv
           uv pip install *.whl
-      - run: uv run python -c 'import pydual.core'
+      - run: uv run python -m pydual._integrity
 
   conda:
     name: Build Conda package (`pixi`)
@@ -77,4 +77,4 @@ jobs:
         with:
           name: conda
       - name: Test package integrity
-        run: pixi exec -w "$(pwd)/$(ls | grep .conda)" python -c 'import pydual.core'
+        run: pixi exec -w "$(pwd)/$(ls | grep .conda)" python -m pydual._integrity
