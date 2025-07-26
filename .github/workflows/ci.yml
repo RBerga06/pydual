@@ -75,10 +75,9 @@ jobs:
           run-install: false
       - uses: actions/download-artifact@v4
         with:
-          name: whl
+          name: conda
       - name: Install project from conda package
         run: |
           pixi init
-          echo "$(pwd)/$(ls | grep .conda)"
           pixi install "$(pwd)/$(ls | grep .conda)"
       - run: pixi run python -c 'import pydual.core'
