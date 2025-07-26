@@ -1,6 +1,6 @@
 """Dynamically-sized dual basis where variables are indipendent by default."""
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final, Self, final, override
+from typing import TYPE_CHECKING, Any, ClassVar, Self, final, override
 import numpy as np
 from .._np import Shape, Tensor
 from .abc import Callback1Scalar, Callback1Vector, Callback2, Callback2Scalar, Callback2Vector, DualBasis, DualPart, Callback1
@@ -17,6 +17,9 @@ class DynDualBasis(DualBasis):
     """
     __slots__ = ()
 
+    INSTANCE: ClassVar[Self]
+    """A shared instance of `DynDualBasis`."""
+
     @override
     def zero[S: Shape](self, shape: S, /) -> "DynDualPart[S]":
         return DynDualPart({})
@@ -25,8 +28,7 @@ class DynDualBasis(DualBasis):
     def zero_like[S: Shape](self, x: "DualPart[Self, S]", /) -> "DynDualPart[S]":
         return DynDualPart({})
 
-DYN_DUAL_BASIS: Final = DynDualBasis()
-"""A `DynDualBasis` instance."""
+DynDualBasis.INSTANCE = DynDualBasis()
 
 _counter: int = 0
 
@@ -44,7 +46,7 @@ class DynDualPart[S: Shape](DualPart[DynDualBasis, S]):
 
     @override
     def get_basis(self, /) -> DynDualBasis:
-        return DYN_DUAL_BASIS
+        return DynDualBasis.INSTANCE
 
     @override
     def cov(self, rhs: Self, /) -> Tensor[S]:

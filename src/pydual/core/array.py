@@ -306,6 +306,11 @@ class dual[S: Shape]:
             cov = cast(Mat[N], np.eye(n))
         return dual(data, DynDualPart.from_dual_parts(FixedDualBasis(cov).eye(sigma)))
 
+    @staticmethod
+    def from_real[Z: Shape](real: Tensor[Z]) -> dTensor[Z]:
+        """Construct a dual number where all dual parts are set to zero."""
+        return dual(real, DynDualBasis.INSTANCE.zero(real.shape))
+
 
 def dreal_and_std[S: Shape](x: dTensor[S] | Tensor[S], /) -> tuple[Tensor[S], Tensor[S] | None]:
     if isinstance(x, dual):
