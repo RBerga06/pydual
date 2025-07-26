@@ -5,10 +5,19 @@ from typing import Self, cast, override
 import numpy as np
 
 from .._np import Mat, Shape, Tensor, Vec
-from .abc import Callback1Scalar, Callback1Vector, Callback2, Callback2Scalar, Callback2Vector, DualBasis, DualPart
+from .abc import (
+    Callback1Scalar,
+    Callback1Vector,
+    Callback2,
+    Callback2Scalar,
+    Callback2Vector,
+    DualBasis,
+    DualPart,
+)
 
 
 __all__ = ["FixedDualBasis", "FixedDualPart"]
+
 
 @dataclass(slots=True, frozen=True)
 class FixedDualBasis[N: int](DualBasis):
@@ -36,14 +45,15 @@ class FixedDualBasis[N: int](DualBasis):
         data = cast(Tensor[tuple[N, *S]], np.zeros(shape, dtype=np.float64))
         return FixedDualPart(data, self)
 
-    def eye(self, delta: Vec[N] | None = None, /) -> "FixedDualPart[tuple[N], N]":  # TODO: Support ndarrays?
+    def eye(
+        self, delta: Vec[N] | None = None, /
+    ) -> "FixedDualPart[tuple[N], N]":  # TODO: Support ndarrays?
         data: Mat[N]
         if delta is None:
             data = np.eye(self.n, dtype=np.float64)
         else:
             data = np.diag(delta)
         return FixedDualPart[tuple[N], N](data, self)
-
 
 
 @dataclass(slots=True, frozen=True)
@@ -60,7 +70,9 @@ class FixedDualPart[S: Shape, N: int](DualPart[FixedDualBasis[N], S]):
         return np.vecdot(np.matvec(self.basis.cov_matrix, self.data.T), rhs.data.T).T  # pyright: ignore[reportAny]
 
     @override
-    def map_[Z: Shape](self, /, f_scalar: Callback1Scalar[S, Z], f_vector: Callback1Vector[S, Z]) -> "FixedDualPart[Z, N]":
+    def map_[Z: Shape](
+        self, /, f_scalar: Callback1Scalar[S, Z], f_vector: Callback1Vector[S, Z]
+    ) -> "FixedDualPart[Z, N]":
         return FixedDualPart(f_vector(self.data), self.basis)
 
     @override
@@ -69,10 +81,13 @@ class FixedDualPart[S: Shape, N: int](DualPart[FixedDualBasis[N], S]):
 
     @override
     def map2_[S2: Shape, Z: Shape](
-        self, lhs_shape: S,
-        rhs: "DualPart[FixedDualBasis[N], S2]", rhs_shape: S2,
+        self,
+        lhs_shape: S,
+        rhs: "DualPart[FixedDualBasis[N], S2]",
+        rhs_shape: S2,
         /,
-        f_scalar: Callback2Scalar[S, S2, Z], f_vector: Callback2Vector[S, S2, Z]
+        f_scalar: Callback2Scalar[S, S2, Z],
+        f_vector: Callback2Vector[S, S2, Z],
     ) -> "FixedDualPart[Z, N]":
         raise NotImplementedError
 

@@ -1,4 +1,5 @@
 """Typing utilities for numpy."""
+
 import numpy as np
 
 type Shape = tuple[int, ...]

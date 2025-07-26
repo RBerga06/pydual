@@ -1,4 +1,5 @@
 """NumPy arrays of dual numbers."""
+
 # pyright: reportUnknownArgumentType=false, reportUnknownLambdaType=false
 from collections.abc import Iterator
 from typing import Any, Literal, Self, cast, final, overload
@@ -20,6 +21,7 @@ type dScalar = dTensor[tuple[()]]
 @dataclass(slots=True, frozen=True, eq=False, match_args=True)
 class dual[S: Shape]:
     """A NumPy ndarray of dual numbers."""
+
     dreal: Tensor[S]
     """The real part."""
     ddual: DynDualPart[S]
@@ -29,16 +31,23 @@ class dual[S: Shape]:
     def shape(self, /) -> S:
         return self.dreal.shape
 
-    def display[X: np.number](self,
+    def display[X: np.number](
+        self,
         *,
         fmt: str = "",
         ufmt: str | None = None,
         packed: bool = True,
     ) -> str:
         if packed and np.sum(self.shape) != 0:
-            self = cast(dTensor[tuple[int, *S]], self)  # inform Pyright that `self` is at least 1-dimensional
+            self = cast(
+                dTensor[tuple[int, *S]], self
+            )  # inform Pyright that `self` is at least 1-dimensional
             x = np.array([x.display(fmt=fmt, ufmt=ufmt, packed=packed) for x in self])
-            return np.array2string(x, separator=",", formatter={"str_kind": lambda x: x})  # pyright: ignore[reportArgumentType]
+            return np.array2string(
+                x,
+                separator=",",
+                formatter={"str_kind": lambda x: x},  # pyright: ignore[reportArgumentType]
+            )
         if ufmt is None:
             ufmt = fmt
         return f"{self.dreal:{fmt}} ± {self.ddual.std():{ufmt}}"
@@ -67,7 +76,9 @@ class dual[S: Shape]:
 
     __radd__ = __add__
 
-    def __sub__(self: dTensor[S] | dScalar, rhs: dTensor[S] | Tensor[S] | dScalar | float) -> dTensor[S]:
+    def __sub__(
+        self: dTensor[S] | dScalar, rhs: dTensor[S] | Tensor[S] | dScalar | float
+    ) -> dTensor[S]:
         if isinstance(rhs, dual):
             return dual[S](
                 self.dreal - rhs.dreal,  # pyright: ignore[reportArgumentType]
@@ -76,7 +87,7 @@ class dual[S: Shape]:
                     rhs.ddual,  # pyright: ignore[reportArgumentType]
                     rhs.shape,
                     lambda x, y: x - y,
-                    lambda x, y: x - y
+                    lambda x, y: x - y,
                 ),
             )
         return dual[S](self.dreal + rhs, self.ddual.map(lambda x: -x))  # pyright: ignore[reportArgumentType]
@@ -85,7 +96,9 @@ class dual[S: Shape]:
         return type(self)(lhs - self.dreal, self.ddual.map(lambda x: -x))  # pyright: ignore[reportArgumentType]
 
     @overload  # (scalar * array)
-    def __mul__[Z: tuple[int, ...]](self: dScalar, rhs: dTensor[Z] | Tensor[Z]) -> dTensor[Z]: ...
+    def __mul__[Z: tuple[int, ...]](
+        self: dScalar, rhs: dTensor[Z] | Tensor[Z]
+    ) -> dTensor[Z]: ...
     @overload  # (array * array) or (array * scalar)
     def __mul__(self, rhs: dTensor[S] | Tensor[S] | dScalar | float) -> dTensor[S]: ...
     def __mul__[Z: tuple[int, ...]](
@@ -94,30 +107,40 @@ class dual[S: Shape]:
         if isinstance(rhs, dual):
             return dual[Z](
                 self.dreal * rhs.dreal,  # pyright: ignore[reportArgumentType]
-                self.ddual.map2(rhs.ddual, lambda dl, dr: dl * rhs.dreal + dr * self.dreal),  # pyright: ignore[reportArgumentType]
+                self.ddual.map2(
+                    rhs.ddual,  # pyright: ignore[reportArgumentType]
+                    lambda dl, dr: dl * rhs.dreal + dr * self.dreal,
+                ),
             )
         return dual[Z](self.dreal * rhs, self.ddual.map(lambda x: x * rhs))  # pyright: ignore[reportArgumentType]
 
     __rmul__ = __mul__
 
     @overload  # (scalar / array)
-    def __truediv__[Z: tuple[int, ...]](self: dScalar, rhs: dTensor[Z] | Tensor[Z]) -> dTensor[Z]: ...
+    def __truediv__[Z: tuple[int, ...]](
+        self: dScalar, rhs: dTensor[Z] | Tensor[Z]
+    ) -> dTensor[Z]: ...
     @overload  # (array / array) or (array / scalar)
-    def __truediv__(self, rhs: dTensor[S] | Tensor[S] | dScalar | float) -> dTensor[S]: ...
+    def __truediv__(
+        self, rhs: dTensor[S] | Tensor[S] | dScalar | float
+    ) -> dTensor[S]: ...
     def __truediv__[Z: tuple[int, ...]](
         self: dTensor[Z] | dScalar, rhs: dTensor[Z] | Tensor[Z] | dScalar | float
     ) -> dTensor[Z]:
         if isinstance(rhs, dual):
             return dual[Z](
                 self.dreal / rhs.dreal,  # pyright: ignore[reportArgumentType]
-                self.ddual.map2(rhs.ddual, lambda dl, dr: dl / rhs.dreal - dr * self.dreal / rhs.dreal**2),  # pyright: ignore[reportArgumentType]
+                self.ddual.map2(
+                    rhs.ddual,  # pyright: ignore[reportArgumentType]
+                    lambda dl, dr: dl / rhs.dreal - dr * self.dreal / rhs.dreal**2,
+                ),
             )
         return dual[Z](self.dreal * rhs, self.ddual.map(lambda x: x * rhs))  # pyright: ignore[reportArgumentType]
 
     def __rtruediv__(self, lhs: Tensor[S] | float) -> dTensor[S]:
         return dual[S](
             lhs / self.dreal,  # pyright: ignore[reportArgumentType]
-            self.ddual.map(lambda dr: -dr * lhs / self.dreal ** 2)
+            self.ddual.map(lambda dr: -dr * lhs / self.dreal**2),
         )
 
     def __pow__(self, rhs: dTensor[S] | Tensor[S] | float) -> dTensor[S]:
@@ -125,7 +148,11 @@ class dual[S: Shape]:
             real: Tensor[S] = self.dreal**rhs.dreal  # pyright: ignore[reportAssignmentType]
             return dual(
                 real,
-                self.ddual.map2(rhs.ddual, lambda dl, dr: real * (rhs.dreal * dl / self.dreal + dr * np.log(self.dreal)))
+                self.ddual.map2(
+                    rhs.ddual,
+                    lambda dl, dr: real
+                    * (rhs.dreal * dl / self.dreal + dr * np.log(self.dreal)),
+                ),
             )
         elif rhs == 0.0:
             # TODO: We should also apply this special case element-wise: for example, [4.2, -0.0] ** [3.2, 0.0] should not fail!
@@ -143,11 +170,17 @@ class dual[S: Shape]:
     @overload
     def __matmul__[N: int](self: dVec[N], rhs: dVec[N] | Vec[N]) -> dScalar: ...
     @overload
-    def __matmul__[N: int, M: int](self: dVec[N], rhs: dMat[N, M] | Mat[N, M]) -> dVec[M]: ...
+    def __matmul__[N: int, M: int](
+        self: dVec[N], rhs: dMat[N, M] | Mat[N, M]
+    ) -> dVec[M]: ...
     @overload
-    def __matmul__[N: int, M: int](self: dMat[N, M], rhs: dVec[M] | Vec[M]) -> dVec[N]: ...
+    def __matmul__[N: int, M: int](
+        self: dMat[N, M], rhs: dVec[M] | Vec[M]
+    ) -> dVec[N]: ...
     @overload
-    def __matmul__[N: int, M: int, K: int](self: dMat[N, M], rhs: dMat[M, K] | Mat[M, K]) -> dMat[N, K]: ...
+    def __matmul__[N: int, M: int, K: int](
+        self: dMat[N, M], rhs: dMat[M, K] | Mat[M, K]
+    ) -> dMat[N, K]: ...
     def __matmul__(  # pyright: ignore[reportInconsistentOverload]  # TODO: make shape parameter covariant somehow
         self: dTensor[Shape], rhs: dTensor[Shape] | Tensor[Shape]
     ) -> dTensor[Shape]:
@@ -159,16 +192,18 @@ class dual[S: Shape]:
                     lambda dl, dr: dl @ rhs.dreal + self.dreal @ dr,
                     lambda dl: dl @ rhs.dreal,
                     lambda dr: self.dreal @ dr,
-                )
+                ),
             )
         return type(self)(self.dreal @ rhs, self.ddual.map(lambda dl: dl @ rhs))
 
     @property
-    def mT[N: int, M: int, Z: Shape](self: dTensor[tuple[*Z, N, M]], /) -> dTensor[tuple[*Z, M, N]]:
+    def mT[N: int, M: int, Z: Shape](
+        self: dTensor[tuple[*Z, N, M]], /
+    ) -> dTensor[tuple[*Z, M, N]]:
         """Transpose `self` as a matrix."""
         return dual(
             cast(Tensor[tuple[*Z, M, N]], self.dreal.mT),
-            self.ddual.map(lambda dl: dl.mT)  # pyright: ignore[reportUnknownMemberType]
+            self.ddual.map(lambda dl: dl.mT),  # pyright: ignore[reportUnknownMemberType]
         )
 
     @classmethod
@@ -185,14 +220,22 @@ class dual[S: Shape]:
         return self._from_real_and_derivative(real, real, self.ddual)  # pyright: ignore[reportArgumentType]
 
     def sin(self: dTensor[S], /) -> dTensor[S]:
-        return self._from_real_and_derivative(np.sin(self.dreal), np.cos(self.dreal), self.ddual)  # pyright: ignore[reportArgumentType]
+        return self._from_real_and_derivative(
+            np.sin(self.dreal),  # pyright: ignore[reportArgumentType]
+            np.cos(self.dreal),  # pyright: ignore[reportArgumentType]
+            self.ddual,
+        )
 
     def cos(self: dTensor[S], /) -> dTensor[S]:
-        return self._from_real_and_derivative(np.cos(self.dreal), -np.sin(self.dreal), self.ddual)  # pyright: ignore[reportArgumentType]
+        return self._from_real_and_derivative(
+            np.cos(self.dreal),  # pyright: ignore[reportArgumentType]
+            -np.sin(self.dreal),  # pyright: ignore[reportArgumentType]
+            self.ddual,
+        )
 
     def tan(self: dTensor[S], /) -> dTensor[S]:
         real = cast(Tensor[S], np.tan(self.dreal))
-        diff = cast(Tensor[S], real ** 2 + 1.0)
+        diff = cast(Tensor[S], real**2 + 1.0)
         return self._from_real_and_derivative(real, diff, self.ddual)
 
     def sinh(self: dTensor[S], /) -> dTensor[S]:
@@ -210,7 +253,9 @@ class dual[S: Shape]:
         diff = cast(Tensor[S], 1.0 - np.tanh(self.dreal) ** 2)
         return self._from_real_and_derivative(real, diff, self.ddual)
 
-    def matinv[N: int](self: dMat[N, N], /) -> dMat[N, N]:  # TODO: Type this for higher-dimensional objects
+    def matinv[N: int](
+        self: dMat[N, N], /
+    ) -> dMat[N, N]:  # TODO: Type this for higher-dimensional objects
         """Matrix inverse."""
         real = np.linalg.inv(self.dreal)
         return dual[tuple[N, N]](real, self.ddual.map(lambda d: -real @ d @ real))  # pyright: ignore[reportArgumentType]
@@ -240,7 +285,9 @@ class dual[S: Shape]:
     @overload
     def __iter__[N: int](self: dVec[N], /) -> Iterator[dScalar]: ...
     @overload
-    def __iter__[Z: Shape](self: dTensor[tuple[int, *Z]], /) -> Iterator[dTensor[Z]]: ...
+    def __iter__[Z: Shape](
+        self: dTensor[tuple[int, *Z]], /
+    ) -> Iterator[dTensor[Z]]: ...
     def __iter__[Z: Shape](self: dTensor[tuple[int, *Z]], /) -> Iterator[dTensor[Z]]:  # pyright: ignore[reportInconsistentOverload]
         for i, x in enumerate(self.dreal):
             yield dual(x, self.ddual.map(lambda d: d[i]))  # pyright: ignore[reportReturnType]
@@ -250,11 +297,15 @@ class dual[S: Shape]:
     @overload  # element access (any shape)
     def __getitem__[Z: tuple[int, ...]](self: dTensor[Z], key: Z, /) -> dScalar: ...
     @overload  # slicing (vector)
-    def __getitem__(self: dVec[int], key: "slice[int | None, int | None, int | None]", /) -> dVec[int]: ...
+    def __getitem__(
+        self: dVec[int], key: "slice[int | None, int | None, int | None]", /
+    ) -> dVec[int]: ...
     @overload  # mask (vector)
     def __getitem__(self: dVec[int], key: Vec[int, np.bool_], /) -> dVec[int]: ...
     @overload  # mask (matrix)
-    def __getitem__(self: dMat[int, int], key: Mat[int, int, np.bool_], /) -> dMat[int, int]: ...
+    def __getitem__(
+        self: dMat[int, int], key: Mat[int, int, np.bool_], /
+    ) -> dMat[int, int]: ...
     def __getitem__(self, key: Any) -> float | dTensor[Shape]:  # pyright: ignore[reportExplicitAny, reportAny]
         return dual[tuple[int, ...]](self.dreal[key], self.ddual.map(lambda x: x[key]))
 
@@ -292,7 +343,9 @@ class dual[S: Shape]:
             return np.sum([x * w for x, w in zip(self, weights)]) / np.sum(weights)  # pyright: ignore[reportAny]
 
     @staticmethod  # TODO: Can this be generalized to N-dimensional tensors somehow?
-    def from_data[N: int](data: Vec[N], /, *, sigma: Vec[N] | None = None, cov: Mat[N] | None = None) -> dVec[N]:
+    def from_data[N: int](
+        data: Vec[N], /, *, sigma: Vec[N] | None = None, cov: Mat[N] | None = None
+    ) -> dVec[N]:
         """
         Convert `data` to a vector of dual numbers.
 
@@ -312,7 +365,9 @@ class dual[S: Shape]:
         return dual(real, DynDualBasis.INSTANCE.zero(real.shape))
 
 
-def dreal_and_std[S: Shape](x: dTensor[S] | Tensor[S], /) -> tuple[Tensor[S], Tensor[S] | None]:
+def dreal_and_std[S: Shape](
+    x: dTensor[S] | Tensor[S], /
+) -> tuple[Tensor[S], Tensor[S] | None]:
     if isinstance(x, dual):
         return x.dreal_and_std
     return (x, None)
