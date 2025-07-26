@@ -1,9 +1,11 @@
 """NumPy arrays of dual numbers."""
 from collections.abc import Iterator
 from typing import Any, Literal, Self, cast, final, overload
-from .abc import DualBasis, DualParts, DynDualBasis, FixedDualBasis, Mat, Vec, Shape, Tensor
 from dataclasses import dataclass
 import numpy as np
+
+from ._np import Shape, Tensor, Mat, Vec
+from ._dual import DualBasis, DualParts, DynDualBasis, FixedDualBasis
 
 type dTensor[S: Shape, B: DualBasis = DynDualBasis] = dual[S, B]
 type dMat[N: int, M: int = N, B: DualBasis = DynDualBasis] = dTensor[tuple[N, M], B]

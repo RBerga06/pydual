@@ -2,11 +2,7 @@
 from dataclasses import dataclass
 from typing import Callable, Protocol, Self, cast, override
 import numpy as np
-
-type Shape = tuple[int, ...]
-type Tensor[S: Shape, T: np.generic = np.float64] = np.ndarray[S, np.dtype[T]]
-type Vec[N: int, T: np.generic = np.float64] = Tensor[tuple[N], T]
-type Mat[N: int, M: int = N, T: np.generic = np.float64] = Tensor[tuple[N, M], T]
+from ._np import Shape, Tensor, Mat, Vec
 
 
 class DualBasis(Protocol):
@@ -20,6 +16,7 @@ class DualBasis(Protocol):
 class DualParts[B: DualBasis, S: Shape](Protocol):
     """The dual parts of a dual number."""
     basis: B
+    """The basis where `self` lives."""
 
     def cov(self, rhs: Self, /) -> Tensor[S]:
         """Evaluate the covariance between `self` and `rhs`."""
@@ -34,7 +31,7 @@ class DualParts[B: DualBasis, S: Shape](Protocol):
         raise NotImplementedError
 
     def map2(self, rhs: "Self | DualParts[B, tuple[()]]", f: Callable[[Tensor[S], Tensor[S] | Tensor[tuple[()]]], Tensor[S]], /) -> Self:
-        """Apply the given function to all dual parts in `self`."""
+        """Apply the given function to all dual parts in `self` and `rhs`."""
         raise NotImplementedError
 
     def map2alt(self,
@@ -45,7 +42,6 @@ class DualParts[B: DualBasis, S: Shape](Protocol):
         /
     ) -> Self:
         """Apply the given functions to all dual parts in `self` and `rhs`."""
-        assert isinstance(rhs, FixedDualPart)
         raise NotImplementedError  # TODO
 
     def zero(self, /) -> Self:
@@ -78,6 +74,7 @@ class FixedDualBasis[N: int](DualBasis):
         return FixedDualPart[S, N](data, self)
 
     def eye(self, delta: Vec[N] | None = None, /) -> "FixedDualPart[tuple[N], N]":
+        data: Mat[N]
         if delta is None:
             data = np.eye(self.n, dtype=np.float64)
         else:
