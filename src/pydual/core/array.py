@@ -1,4 +1,5 @@
 """NumPy arrays of dual numbers."""
+# pyright: reportUnknownArgumentType=false, reportUnknownLambdaType=false
 from collections.abc import Iterator
 from typing import Any, Literal, Self, cast, final, overload
 from dataclasses import dataclass
@@ -37,7 +38,7 @@ class dual[S: Shape]:
         if packed and np.sum(self.shape) != 0:
             self = cast(dTensor[tuple[int, *S]], self)  # inform Pyright that `self` is at least 1-dimensional
             x = np.array([x.display(fmt=fmt, ufmt=ufmt, packed=packed) for x in self])
-            return np.array2string(x, separator=",", formatter={"str_kind": lambda x: x})  # pyright: ignore[reportArgumentType, reportUnknownLambdaType]
+            return np.array2string(x, separator=",", formatter={"str_kind": lambda x: x})  # pyright: ignore[reportArgumentType]
         if ufmt is None:
             ufmt = fmt
         return f"{self.dreal:{fmt}} ± {self.ddual.std():{ufmt}}"
@@ -54,7 +55,7 @@ class dual[S: Shape]:
         return self
 
     def __neg__(self, /) -> Self:
-        return type(self)(-self.dreal, self.ddual.map_(lambda x: -x, lambda x: -x))
+        return type(self)(-self.dreal, self.ddual.map(lambda x: -x))
 
     def __add__(self, rhs: dTensor[S] | Tensor[S] | dScalar | float) -> dTensor[S]:
         if isinstance(rhs, dual):
@@ -70,7 +71,13 @@ class dual[S: Shape]:
         if isinstance(rhs, dual):
             return dual[S](
                 self.dreal - rhs.dreal,  # pyright: ignore[reportArgumentType]
-                self.ddual.map2(rhs.ddual, lambda x, y: x - y),  # pyright: ignore[reportArgumentType]
+                self.ddual.map2_(
+                    self.shape,  # pyright: ignore[reportArgumentType]
+                    rhs.ddual,  # pyright: ignore[reportArgumentType]
+                    rhs.shape,
+                    lambda x, y: x - y,
+                    lambda x, y: x - y
+                ),
             )
         return dual[S](self.dreal + rhs, self.ddual.map(lambda x: -x))  # pyright: ignore[reportArgumentType]
 
@@ -131,10 +138,7 @@ class dual[S: Shape]:
 
     def __rpow__(self, lhs: float) -> dTensor[S]:
         real: Tensor[S] = lhs**self.dreal  # pyright: ignore[reportAssignmentType]
-        return type(self)(
-            real,
-            self.ddual.map(lambda dr: real * dr * np.log(lhs)),  # pyright: ignore[reportArgumentType]
-        )
+        return type(self)(real, self.ddual.map(lambda dr: real * dr * np.log(lhs)))
 
     @overload
     def __matmul__[N: int](self: dVec[N], rhs: dVec[N] | Vec[N]) -> dScalar: ...
@@ -164,10 +168,8 @@ class dual[S: Shape]:
         """Transpose `self` as a matrix."""
         return dual(
             cast(Tensor[tuple[*Z, M, N]], self.dreal.mT),
-            self.ddual.map_(  # pyright: ignore[reportArgumentType]
-                f_scalar = lambda dl: dl.mT,
-                f_vector = lambda dl: np.moveaxis(np.moveaxis(dl, -1, 0).mT, 0, -1),
-            ))
+            self.ddual.map(lambda dl: dl.mT)  # pyright: ignore[reportUnknownMemberType]
+        )
 
     @classmethod
     def _from_real_and_derivative(
@@ -241,7 +243,7 @@ class dual[S: Shape]:
     def __iter__[Z: Shape](self: dTensor[tuple[int, *Z]], /) -> Iterator[dTensor[Z]]: ...
     def __iter__[Z: Shape](self: dTensor[tuple[int, *Z]], /) -> Iterator[dTensor[Z]]:  # pyright: ignore[reportInconsistentOverload]
         for i, x in enumerate(self.dreal):
-            yield dual(x, self.ddual.map(lambda d: d[i]))  # pyright: ignore[reportReturnType, reportAny]
+            yield dual(x, self.ddual.map(lambda d: d[i]))  # pyright: ignore[reportReturnType]
 
     @overload  # element access (vector)
     def __getitem__[N: int](self: dVec[N], key: N, /) -> dScalar: ...
@@ -254,7 +256,7 @@ class dual[S: Shape]:
     @overload  # mask (matrix)
     def __getitem__(self: dMat[int, int], key: Mat[int, int, np.bool_], /) -> dMat[int, int]: ...
     def __getitem__(self, key: Any) -> float | dTensor[Shape]:  # pyright: ignore[reportExplicitAny, reportAny]
-        return dual[tuple[int, ...]](self.dreal[key], self.ddual.map(lambda x: x[key]))  # pyright: ignore[reportArgumentType]
+        return dual[tuple[int, ...]](self.dreal[key], self.ddual.map(lambda x: x[key]))
 
     @overload
     def as_tuple(self: dVec[Literal[0]], /) -> tuple[()]: ...
@@ -278,7 +280,7 @@ class dual[S: Shape]:
     ) -> dScalar:
         return dual[tuple[()]](
             np.sum(self.dreal, axis=axis),  # pyright: ignore[reportAny]
-            self.ddual.map(lambda dx: np.sum(dx, axis=axis)),  # pyright: ignore[reportArgumentType, reportAny]
+            self.ddual.map(lambda dx: np.sum(dx, axis=axis)),  # pyright: ignore[reportAny]
         )
 
     def average[N: int](self: dVec[N], /, *, weights: Vec[N] | bool = True) -> dScalar:
