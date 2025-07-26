@@ -9,7 +9,7 @@ on:
 
 jobs:
   pypi:
-    name: Build PyPI package
+    name: Build PyPI package (`uv`)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,12 +27,11 @@ jobs:
           name: whl
           path: dist/*.whl
           retention-days: 1
-  pypi-test:
+  pypi-integrity:
+    name: Test PyPI package integrity (`uv`)
     needs: pypi
-    name: Test PyPI package contents
     runs-on: ubuntu-latest
     steps:
-      # - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -42,10 +41,43 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: whl
-      # - name: Install project dependencies
-      #   run: uv sync --no-install-project
       - name: Install project from wheel
         run: |
           uv venv
           uv pip install *.whl
       - run: uv run python -c 'import pydual.core'
+
+  conda:
+    name: Build Conda package (`pixi`)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.13
+        with:
+          pixi-version: latest
+          cache: true
+      - name: Build the project
+        run: pixi build
+      - name: Upload wheel as GitHub Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda
+          path: '*.conda'
+          retention-days: 1
+  conda-integrity:
+    name: Test Conda package integrity (`pixi`)
+    needs: conda
+    runs-on: ubuntu-latest
+    steps:
+      - uses: prefix-dev/setup-pixi@v0.8.13
+        with:
+          pixi-version: latest
+          cache: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: whl
+      - name: Install project from conda package
+        run: |
+          pixi init
+          pixi install *.conda
+      - run: pixi run python -c 'import pydual.core'
