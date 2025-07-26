@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pypi:
+    name: Build PyPI package (`uv`)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Build the project
+        run: uv build -v --force-pep517 --wheel
+      - name: Upload wheel as GitHub Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: whl
+          path: dist/*.whl
+          retention-days: 1
+  pypi-integrity:
+    name: Test PyPI package integrity (`uv`)
+    needs: pypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: whl
+      - name: Test wheel integrity
+        run: |
+          uv venv
+          uv pip install *.whl
+      - run: uv run python -m pydual._integrity
+
+  conda:
+    name: Build Conda package (`pixi`)
+    needs: pypi-integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.13
+        with:
+          pixi-version: latest
+          run-install: false
+      - name: Build the project
+        run: pixi build
+      - name: Upload wheel as GitHub Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda
+          path: '*.conda'
+          retention-days: 1
+  conda-integrity:
+    name: Test Conda package integrity (`pixi`)
+    needs: conda
+    runs-on: ubuntu-latest
+    steps:
+      - uses: prefix-dev/setup-pixi@v0.8.13
+        with:
+          pixi-version: latest
+          run-install: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: conda
+      - name: Test package integrity
+        run: pixi exec -w "$(pwd)/$(ls | grep .conda)" python -m pydual._integrity

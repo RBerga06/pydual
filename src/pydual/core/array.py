@@ -40,7 +40,7 @@ class dual[S: Shape]:
     ) -> str:
         if packed and np.sum(self.shape) != 0:
             self = cast(
-                dTensor[tuple[int, *S]], self
+                dTensor["tuple[int, *S]"], self
             )  # inform Pyright that `self` is at least 1-dimensional
             x = np.array([x.display(fmt=fmt, ufmt=ufmt, packed=packed) for x in self])
             return np.array2string(
@@ -198,11 +198,11 @@ class dual[S: Shape]:
 
     @property
     def mT[N: int, M: int, Z: Shape](
-        self: dTensor[tuple[*Z, N, M]], /
-    ) -> dTensor[tuple[*Z, M, N]]:
+        self: dTensor["tuple[*Z, N, M]"], /
+    ) -> dTensor["tuple[*Z, M, N]"]:
         """Transpose `self` as a matrix."""
         return dual(
-            cast(Tensor[tuple[*Z, M, N]], self.dreal.mT),
+            cast(Tensor["tuple[*Z, M, N]"], self.dreal.mT),
             self.ddual.map(lambda dl: dl.mT),  # pyright: ignore[reportUnknownMemberType]
         )
 
@@ -286,9 +286,9 @@ class dual[S: Shape]:
     def __iter__[N: int](self: dVec[N], /) -> Iterator[dScalar]: ...
     @overload
     def __iter__[Z: Shape](
-        self: dTensor[tuple[int, *Z]], /
+        self: dTensor["tuple[int, *Z]"], /
     ) -> Iterator[dTensor[Z]]: ...
-    def __iter__[Z: Shape](self: dTensor[tuple[int, *Z]], /) -> Iterator[dTensor[Z]]:  # pyright: ignore[reportInconsistentOverload]
+    def __iter__[Z: Shape](self: dTensor["tuple[int, *Z]"], /) -> Iterator[dTensor[Z]]:  # pyright: ignore[reportInconsistentOverload]
         for i, x in enumerate(self.dreal):
             yield dual(x, self.ddual.map(lambda d: d[i]))  # pyright: ignore[reportReturnType]
 
