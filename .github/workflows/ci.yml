@@ -79,5 +79,5 @@ jobs:
       - name: Install project from conda package
         run: |
           pixi init
-          pixi install *.conda
+          pixi install $(pwd)/$(ls *.conda)
       - run: pixi run python -c 'import pydual.core'
