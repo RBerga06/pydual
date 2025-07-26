@@ -35,14 +35,16 @@ class FixedDualBasis[N: int](DualBasis):
 
     @override
     def zero[S: Shape](self, shape: S, /) -> "FixedDualPart[S, N]":
-        data = cast(Tensor[tuple[N, *S]], np.zeros((*shape, self.n), dtype=np.float64))
+        data = cast(
+            Tensor["tuple[N, *S]"], np.zeros((*shape, self.n), dtype=np.float64)
+        )
         return FixedDualPart(data, self)
 
     @override
     def zero_like[S: Shape](self, dual: DualPart[Self, S], /) -> "FixedDualPart[S, N]":
         assert isinstance(dual, FixedDualPart)
         shape = cast(FixedDualPart[S, N], dual).data.shape
-        data = cast(Tensor[tuple[N, *S]], np.zeros(shape, dtype=np.float64))
+        data = cast(Tensor["tuple[N, *S]"], np.zeros(shape, dtype=np.float64))
         return FixedDualPart(data, self)
 
     def eye(
@@ -58,7 +60,7 @@ class FixedDualBasis[N: int](DualBasis):
 
 @dataclass(slots=True, frozen=True)
 class FixedDualPart[S: Shape, N: int](DualPart[FixedDualBasis[N], S]):
-    data: Tensor[tuple[N, *S]]
+    data: Tensor["tuple[N, *S]"]
     basis: FixedDualBasis[N]
 
     @override

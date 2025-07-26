@@ -1,36 +1,56 @@
 """ABCs / Protocols for dual parts."""
+
 from typing import Callable, Protocol, Self, overload
 from .._np import Shape, Tensor
 
 __all__ = [
-    "DualBasis", "DualPart",
-    "Callback1Scalar", "Callback1Vector", "Callback1",
-    "Callback2Scalar", "Callback2Vector", "Callback2",
+    "DualBasis",
+    "DualPart",
+    "Callback1Scalar",
+    "Callback1Vector",
+    "Callback1",
+    "Callback2Scalar",
+    "Callback2Vector",
+    "Callback2",
 ]
 
 
 type Callback1Scalar[S: Shape, Z: Shape = S] = Callable[[Tensor[S]], Tensor[Z]]
 
+
 class Callback1Vector[S: Shape, Z: Shape = S](Protocol):
-    def __call__[N: int](self, arg: Tensor[tuple[N, *S]], /) -> Tensor[tuple[N, *Z]]: ...
+    def __call__[N: int](
+        self, arg: Tensor["tuple[N, *S]"], /
+    ) -> Tensor["tuple[N, *Z]"]: ...
+
 
 class Callback1[S: Shape, Z: Shape = S](Protocol):
     @overload
     def __call__(self, arg: Tensor[S], /) -> Tensor[Z]: ...
     @overload
-    def __call__[N: int](self, arg: Tensor[tuple[N, *S]], /) -> Tensor[tuple[N, *Z]]: ...
+    def __call__[N: int](
+        self, arg: Tensor["tuple[N, *S]"], /
+    ) -> Tensor["tuple[N, *Z]"]: ...
 
 
-type Callback2Scalar[S1: Shape, S2: Shape = S1, Z: Shape = S1] = Callable[[Tensor[S1], Tensor[S2]], Tensor[Z]]
+type Callback2Scalar[S1: Shape, S2: Shape = S1, Z: Shape = S1] = Callable[
+    [Tensor[S1], Tensor[S2]], Tensor[Z]
+]
+
 
 class Callback2Vector[S1: Shape, S2: Shape = S1, Z: Shape = S1](Protocol):
-    def __call__[N: int](self, lhs: Tensor[tuple[N, *S1]], rhs: Tensor[tuple[N, *S2]], /) -> Tensor[tuple[N, *Z]]: ...
+    def __call__[N: int](
+        self, lhs: Tensor["tuple[N, *S1]"], rhs: Tensor["tuple[N, *S2]"], /
+    ) -> Tensor["tuple[N, *Z]"]: ...
+
 
 class Callback2[S1: Shape, S2: Shape = S1, Z: Shape = S1](Protocol):
     @overload
     def __call__(self, lhs: Tensor[S1], rhs: Tensor[S2], /) -> Tensor[Z]: ...
     @overload
-    def __call__[N: int](self, lhs: Tensor[tuple[N, *S1]], rhs: Tensor[tuple[N, *S2]], /) -> Tensor[tuple[N, *Z]]: ...
+    def __call__[N: int](
+        self, lhs: Tensor["tuple[N, *S1]"], rhs: Tensor["tuple[N, *S2]"], /
+    ) -> Tensor["tuple[N, *Z]"]: ...
 
 
 class DualPart[Basis: DualBasis, S: Shape](Protocol):
@@ -50,7 +70,9 @@ class DualPart[Basis: DualBasis, S: Shape](Protocol):
         """Evaluate the standard deviation of `self` (under the basis `self.basis`)."""
         return self.cov(self) ** 0.5  # pyright: ignore[reportReturnType]
 
-    def map_[Z: Shape](self, /, f_scalar: Callback1Scalar[S, Z], f_vector: Callback1Vector[S, Z]) -> "DualPart[Basis, Z]":
+    def map_[Z: Shape](
+        self, /, f_scalar: Callback1Scalar[S, Z], f_vector: Callback1Vector[S, Z]
+    ) -> "DualPart[Basis, Z]":
         """Apply the given functions to all elements in `self`."""
         raise NotImplementedError
 
@@ -59,10 +81,13 @@ class DualPart[Basis: DualBasis, S: Shape](Protocol):
         return self.map_(f, f)  # pyright: ignore[reportArgumentType]  # TODO: pyright bug?
 
     def map2_[S2: Shape, Z: Shape](
-        self, lhs_shape: S,
-        rhs: "DualPart[Basis, S2]", rhs_shape: S2,
+        self,
+        lhs_shape: S,
+        rhs: "DualPart[Basis, S2]",
+        rhs_shape: S2,
         /,
-        f_scalar: Callback2Scalar[S, S2, Z], f_vector: Callback2Vector[S, S2, Z]
+        f_scalar: Callback2Scalar[S, S2, Z],
+        f_vector: Callback2Vector[S, S2, Z],
     ) -> "DualPart[Basis, Z]":
         """
         Apply the given functions to all elements in `self` and `rhs`.
