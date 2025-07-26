@@ -5,7 +5,7 @@ from typing import Self, cast, override
 import numpy as np
 
 from .._np import Mat, Shape, Tensor, Vec
-from .abc import Callback1Scalar, Callback1Vector, Callback2, DualBasis, DualPart
+from .abc import Callback1Scalar, Callback1Vector, Callback2, Callback2Scalar, Callback2Vector, DualBasis, DualPart
 
 
 __all__ = ["FixedDualBasis", "FixedDualPart"]
@@ -25,10 +25,15 @@ class FixedDualBasis[N: int](DualBasis):
         return self.cov_matrix.shape[0]  # pyright: ignore[reportReturnType]
 
     @override
+    def zero[S: Shape](self, shape: S, /) -> "FixedDualPart[S, N]":
+        data = cast(Tensor[tuple[*S, N]], np.zeros((*shape, self.n), dtype=np.float64))
+        return FixedDualPart(data, self)
+
+    @override
     def zero_like[S: Shape](self, dual: DualPart[Self, S], /) -> "FixedDualPart[S, N]":
         assert isinstance(dual, FixedDualPart)
         shape = cast(FixedDualPart[S, N], dual).data.shape
-        data = cast(Tensor[tuple[*S, N]], np.zeros((*shape, self.n), dtype=np.float64))
+        data = cast(Tensor[tuple[*S, N]], np.zeros(shape, dtype=np.float64))
         return FixedDualPart(data, self)
 
     def eye(self, delta: Vec[N] | None = None, /) -> "FixedDualPart[tuple[N], N]":  # TODO: Support ndarrays?
@@ -60,6 +65,15 @@ class FixedDualPart[S: Shape, N: int](DualPart[FixedDualBasis[N], S]):
 
     @override
     def map2(self, rhs: Self, f: Callback2[S], /) -> Self:
+        raise NotImplementedError
+
+    @override
+    def map2_[S2: Shape, Z: Shape](
+        self, lhs_shape: S,
+        rhs: "DualPart[FixedDualBasis[N], S2]", rhs_shape: S2,
+        /,
+        f_scalar: Callback2Scalar[S, S2, Z], f_vector: Callback2Vector[S, S2, Z]
+    ) -> "FixedDualPart[Z, N]":
         raise NotImplementedError
 
     @override

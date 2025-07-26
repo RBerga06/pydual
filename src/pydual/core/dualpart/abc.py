@@ -5,6 +5,7 @@ from .._np import Shape, Tensor
 __all__ = [
     "DualBasis", "DualPart",
     "Callback1Scalar", "Callback1Vector", "Callback1",
+    "Callback2Scalar", "Callback2Vector", "Callback2",
 ]
 
 
@@ -20,11 +21,16 @@ class Callback1[S: Shape, Z: Shape = S](Protocol):
     def __call__[N: int](self, arg: Tensor[tuple[*Z, N]], /) -> Tensor[tuple[*Z, N]]: ...
 
 
-class Callback2[S: Shape](Protocol):
+type Callback2Scalar[S1: Shape, S2: Shape = S1, Z: Shape = S1] = Callable[[Tensor[S1], Tensor[S2]], Tensor[Z]]
+
+class Callback2Vector[S1: Shape, S2: Shape = S1, Z: Shape = S1](Protocol):
+    def __call__[N: int](self, lhs: Tensor[tuple[*S1, N]], rhs: Tensor[tuple[*S2, N]], /) -> Tensor[tuple[*Z, N]]: ...
+
+class Callback2[S1: Shape, S2: Shape = S1, Z: Shape = S1](Protocol):
     @overload
-    def __call__(self, lhs: Tensor[S], rhs: Tensor[S], /) -> Tensor[S]: ...
+    def __call__(self, lhs: Tensor[S1], rhs: Tensor[S2], /) -> Tensor[Z]: ...
     @overload
-    def __call__[N: int](self, lhs: Tensor[tuple[*S, N]], rhs: Tensor[tuple[*S, N]], /) -> Tensor[tuple[*S, N]]: ...
+    def __call__[N: int](self, lhs: Tensor[tuple[*S1, N]], rhs: Tensor[tuple[*S2, N]], /) -> Tensor[tuple[*Z, N]]: ...
 
 
 class DualPart[Basis: DualBasis, S: Shape](Protocol):
@@ -52,6 +58,19 @@ class DualPart[Basis: DualBasis, S: Shape](Protocol):
         """Apply the given function to all elements in `self`."""
         return self.map_(f, f)  # pyright: ignore[reportArgumentType]  # TODO: pyright bug?
 
+    def map2_[S2: Shape, Z: Shape](
+        self, lhs_shape: S,
+        rhs: "DualPart[Basis, S2]", rhs_shape: S2,
+        /,
+        f_scalar: Callback2Scalar[S, S2, Z], f_vector: Callback2Vector[S, S2, Z]
+    ) -> "DualPart[Basis, Z]":
+        """
+        Apply the given functions to all elements in `self` and `rhs`.
+
+        NOTE: You should first make sure that `rhs` really has the same basis as `self`!
+        """
+        raise NotImplementedError
+
     def map2(self, rhs: Self, f: Callback2[S], /) -> Self:
         """
         Apply the given function to all elements in `self` and `rhs`.
@@ -67,6 +86,10 @@ class DualPart[Basis: DualBasis, S: Shape](Protocol):
 
 class DualBasis(Protocol):
     """A basis for a space of dual parts."""
+
+    def zero[S: Shape](self, shape: S, /) -> DualPart[Self, S]:
+        """Return a zero/empty dual part with the give shape and `self` as a basis."""
+        raise NotImplementedError
 
     def zero_like[S: Shape](self, dual: DualPart[Self, S], /) -> DualPart[Self, S]:
         """Return a zero/empty dual part with the same shape as `dual` and `self` as a basis."""
