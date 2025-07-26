@@ -2,5 +2,8 @@
     "python.defaultInterpreterPath": "${workspaceFolder}/.pixi/envs/default/bin/python",
     "[python]": {
         "editor.formatOnSave": true
+    },
+    "[github-actions-workflow]": {
+        "editor.tabSize": 2,
     }
 }
