@@ -322,25 +322,31 @@ class dual[S: Shape]:
     def as_tuple(self: dVec[int], /) -> tuple[dScalar, ...]:  # pyright: ignore[reportInconsistentOverload]
         return tuple(self)
 
-    def sum[N: int](
-        self: dVec[N],
-        /,
-        *,
-        axis: Literal[0] | None = None,
-        out: None = None,  # pyright: ignore[reportUnusedParameter]
-    ) -> dScalar:
+    def sum(self, /) -> dScalar:
+        """Sum all elements in the array."""
         return dual[tuple[()]](
-            np.sum(self.dreal, axis=axis),  # pyright: ignore[reportAny]
-            self.ddual.map(lambda dx: np.sum(dx, axis=axis)),  # pyright: ignore[reportAny]
+            np.sum(self.dreal),  # pyright: ignore[reportArgumentType]
+            self.ddual.map_(
+                f_scalar=lambda dx: np.sum(dx),  # pyright: ignore[reportArgumentType]
+                f_vector=lambda dx: np.sum(dx, axis=tuple(range(1, dx.ndim))),  # pyright: ignore[reportAny]
+            ),
         )
 
-    def average[N: int](self: dVec[N], /, *, weights: Vec[N] | bool = True) -> dScalar:
+    def average(self, /, *, weights: Tensor[S] | bool = True) -> dScalar:
+        """
+        Average all elements in the array.
+
+        Arguments:
+        - weights (optional): \
+            if `False`, calculate the arithmetic mean; \
+            if `True` (the default), calculate the weighted mean; \
+            else, the given weights (a `ndarray` with the same shape as `self`) will be used.
+        """
         if weights is True:
-            weights = self.ddual.std() ** -2
-        if weights is False:
-            return self.sum() / self.shape[0]
-        else:
-            return np.sum([x * w for x, w in zip(self, weights)]) / np.sum(weights)  # pyright: ignore[reportAny]
+            weights = cast(Tensor[S], self.ddual.std() ** -2)
+        elif weights is False:
+            weights = np.ones(self.shape)
+        return (self * weights).sum() / np.sum(weights)
 
     @staticmethod  # TODO: Can this be generalized to N-dimensional tensors somehow?
     def from_data[N: int](
