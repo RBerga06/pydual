@@ -28,4 +28,4 @@ jobs:
           pixi-version: latest
           cache: true
           environments: docs
-      - run: pixi run mkdocs gh-deploy --force
+      - run: pixi run -e docs mkdocs gh-deploy --force
