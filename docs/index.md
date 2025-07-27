@@ -26,8 +26,8 @@ print(x.display())    # print `x` as an array of '<best> ± <delta>' elements (6
 # calculate array sum
 print(x.sum().display()) #(7)!
 
-# calculate array average (arithmetic mean)
-print(x.average().display())
+# calculate unweighted array average (arithmetic mean)
+print(x.average(weights=False).display())
 ```
 
 1. Error bars on `x_best`
