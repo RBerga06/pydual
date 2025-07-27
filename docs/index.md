@@ -36,7 +36,7 @@ print(x.average(weights=False).display())
 4. This attribute is called `.ddual` (and not `.dual`) for symmetry with `.dreal`.
 5. If the random variables are normally distributed, their standard deviations are the best estimators for uncertainties. Note that the result is equal to `x_errs`.
 6. The `.display()` method uses `.ddual.std()` under the hood, hence uncertainties are estimated this way.
-7. Note that the dual part is automatically calculated as the square root of the sum of hte squares of the elements of `x.ddual.std()`, because they are independent.
+7. Note that the uncertainty is automatically calculated as the square root of the sum of the squares of the elements of `x.ddual.std()`, because they are independent.
 
 ## Future directions
 
