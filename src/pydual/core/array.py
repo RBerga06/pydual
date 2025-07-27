@@ -318,6 +318,10 @@ class dual[S: Shape]:
     @overload
     def as_tuple(self: dVec[Literal[3]], /) -> tuple[dScalar, dScalar, dScalar]: ...
     @overload
+    def as_tuple(
+        self: dVec[Literal[4]], /
+    ) -> tuple[dScalar, dScalar, dScalar, dScalar]: ...
+    @overload
     def as_tuple(self: dVec[int], /) -> tuple[dScalar, ...]: ...
     def as_tuple(self: dVec[int], /) -> tuple[dScalar, ...]:  # pyright: ignore[reportInconsistentOverload]
         return tuple(self)
