@@ -2,17 +2,20 @@ site_name: pydual
 theme:
   name: material
   palette:
-    # Dark Mode
-    - scheme: slate
+    # Automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/monitor
+        name: Switch to light mode
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       toggle:
         icon: material/weather-sunny
-        name: Dark mode
-      primary: blue
-      accent: deep purple
-    # Light Mode
-    - scheme: default
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       toggle:
         icon: material/weather-night
-        name: Light mode
-      primary: blue
-      accent: deep orange
+        name: Switch to system preference
