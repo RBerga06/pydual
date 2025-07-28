@@ -13,7 +13,7 @@ Automatic differentiation with dual numbers
 
 ## Installation
 ```sh
-pixi add --pypi 'pyphylab @ https://github.com/rberga06/phylab.git'
+pixi add --pypi 'pydual @ https://codeberg.org/rberga06/pydual.git'
 ```
 > [!NOTE]
 > This project currently supports Python 3.13 or newer.
